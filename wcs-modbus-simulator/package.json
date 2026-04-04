@@ -1,0 +1,17 @@
+{
+  "name": "wcs-modbus-simulator",
+  "version": "1.0.0",
+  "description": "Node.js Modbus TCP simulator using jsmodbus with scriptable scenarios and live terminal visualization",
+  "main": "client/index.js",
+  "scripts": {
+    "sim:ramp": "node simulator/run.js --scenario ramp",
+    "sim:alarm": "node simulator/run.js --scenario alarm",
+    "sim:step": "node simulator/run.js --scenario step",
+    "sim:agv-handshake": "node simulator/run.js --scenario agv-handshake",
+    "dashboard": "node simulator/dashboard.js",
+    "client": "node client/index.js"
+  },
+  "dependencies": {
+    "jsmodbus": "^4.0.10"
+  }
+}
