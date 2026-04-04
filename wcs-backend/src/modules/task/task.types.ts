@@ -4,7 +4,6 @@ export enum TaskState {
   WAITING_FOR_PLC = 'WAITING_FOR_PLC', // Step 4: AGV at dock, waiting for goods
   CONTINUING = 'CONTINUING', // Step 5: Goods loaded, AGV departing
   COMPLETED = 'COMPLETED', // Step 6: Task fully done
-  TIMED_OUT = 'TIMED_OUT', // Step 4: 30s elapsed, no goods loaded
 }
 
 // This is the in-memory record of the current task

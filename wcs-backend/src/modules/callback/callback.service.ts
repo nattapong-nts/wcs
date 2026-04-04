@@ -31,6 +31,13 @@ export class CallbackService {
         //   break;
         // }
 
+        case 'out':
+          // Do nothing
+          this.logger.log(
+            `[agvCallback] Out callback received for taskCode=${payload.taskCode}`,
+          );
+          break;
+
         case 'complete':
           // await this.taskService.onTaskComplete(payload.reqCode);
           await this.taskService.onAgvArrivedAtDock(payload.taskCode);

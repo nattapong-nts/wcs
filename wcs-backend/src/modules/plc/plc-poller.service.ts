@@ -5,11 +5,11 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
-import { TaskService } from '../task/task.service';
-import modbusConfig from 'src/config/modbus.config';
 import type { ConfigType } from '@nestjs/config';
-import { ModbusService } from '../modbus/modbus.service';
+import modbusConfig from 'src/config/modbus.config';
 import { COIL } from '../modbus/modbus.constants';
+import { ModbusService } from '../modbus/modbus.service';
+import { TaskService } from '../task/task.service';
 
 @Injectable()
 export class PlcPollerService implements OnModuleInit, OnModuleDestroy {
@@ -103,9 +103,9 @@ export class PlcPollerService implements OnModuleInit, OnModuleDestroy {
       // Step 6: Items unloaded (rising edge only) — completes the task
       if (itemsUnloaded && !this.lastItemsUnloadedSignal) {
         this.logger.log('Items unloaded (rising edge)');
-        const reqCode = this.taskService.getCurrentTaskReqCode();
-        if (reqCode) {
-          await this.taskService.onTaskComplete(reqCode);
+        const rcsTaskCode = this.taskService.getCurrentTaskRcsTaskCode();
+        if (rcsTaskCode) {
+          await this.taskService.onTaskComplete(rcsTaskCode);
         }
       }
 

@@ -3,8 +3,8 @@
 const http = require("http");
 const { start } = require("./server");
 
-const HTTP_PORT = parseInt(process.env.DASHBOARD_PORT || "3001", 10);
-const MODBUS_PORT = parseInt(process.env.MODBUS_PORT || "5020", 10);
+const HTTP_PORT = 3001;
+const MODBUS_PORT = 5020;
 
 // ─── State tracking ───────────────────────────────────────────────────────────
 // We mirror the coil/DI values here so the dashboard can display them
@@ -21,9 +21,9 @@ function renderHtml() {
       : '<span style="color:#475569;font-size:1.4em">○</span>';
 
   const diRows = [
-    [100, "Step 2: PLC Request Pickup", "plc-request-pickup"],
-    [101, "Step 5: Goods Loaded", "goods-loaded"],
-    [102, "Step 6: Items Unloaded", "items-unloaded"],
+    [100, "PLC Request Pickup", "plc-request-pickup"],
+    [101, "Goods Loaded", "goods-loaded"],
+    [102, "Items Unloaded", "items-unloaded"],
   ]
     .map(
       ([addr, label, step]) => `
@@ -40,7 +40,7 @@ function renderHtml() {
     .join("");
 
   const doLabels = {
-    0: "DO_AGV_TASK_DISPATCHED",
+    0: "DO_AGV_IS_READY_FOR_PICKUP",
     1: "DO_AGV_IN_SAFETY_ZONE",
     2: "DO_AGV_AT_DOCK_WAITING",
     3: "DO_AGV_CONTINUING",
@@ -52,7 +52,7 @@ function renderHtml() {
       ([addr, label]) => `
     <tr>
       <td>${dot(state.do[addr])}</td>
-      <td>C${addr}</td>
+      <td>DO ${addr}</td>
       <td>${label}</td>
     </tr>`,
     )

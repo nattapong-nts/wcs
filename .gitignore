@@ -28,3 +28,5 @@ Thumbs.db
 # pnpm / npm
 pnpm-debug.log*
 npm-debug.log*
+
+.cursor

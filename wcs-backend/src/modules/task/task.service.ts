@@ -23,7 +23,6 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TaskService.name);
 
   private currentTask: TaskContext | null = null;
-  private dockTimeoutHandle: NodeJS.Timeout | null = null;
 
   constructor(
     @Inject(agvConfig.KEY)
@@ -102,8 +101,7 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
     if (
       this.currentTask &&
       this.currentTask.state !== TaskState.IDLE &&
-      this.currentTask.state !== TaskState.COMPLETED &&
-      this.currentTask.state !== TaskState.TIMED_OUT
+      this.currentTask.state !== TaskState.COMPLETED
     ) {
       throw new Error(
         `Cannot dispatch: a task is already running in state ${this.currentTask.state}`,
@@ -171,8 +169,7 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
     if (
       this.currentTask &&
       this.currentTask.state !== TaskState.IDLE &&
-      this.currentTask.state !== TaskState.COMPLETED &&
-      this.currentTask.state !== TaskState.TIMED_OUT
+      this.currentTask.state !== TaskState.COMPLETED
     ) {
       this.logger.warn(
         `PLC request pickup but task already running in state ${this.currentTask.state} — ignoring`,
@@ -214,7 +211,7 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
-  // AGV arrived at dock (callback: 'out')
+  // AGV arrived at dock (callback: 'complete')
   async onAgvArrivedAtDock(taskCode: string): Promise<void> {
     if (!this.currentTask || this.currentTask.rcsTaskCode !== taskCode) {
       this.logger.warn(
@@ -236,8 +233,7 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
     this.persistTask();
   }
 
-  // ─── Step 5: Goods loaded — PLC DI 101 ───────────────────────────────────
-
+  // Goods loaded
   async onGoodsLoaded(): Promise<void> {
     if (
       !this.currentTask ||
@@ -278,8 +274,8 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
-  // ─── Step 6: Task complete (callback: 'complete' or 'ctu') ──────────────────
-
+  // TODO: This have to be done after continueTask is successful
+  // Task complete
   async onTaskComplete(taskCode: string): Promise<void> {
     if (!this.currentTask || this.currentTask.rcsTaskCode !== taskCode) {
       this.logger.warn(
@@ -288,11 +284,7 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const terminalStates = [
-      TaskState.IDLE,
-      TaskState.COMPLETED,
-      TaskState.TIMED_OUT,
-    ];
+    const terminalStates = [TaskState.IDLE, TaskState.COMPLETED];
     if (terminalStates.includes(this.currentTask.state)) {
       this.logger.warn(
         `[taskCode=${taskCode}] Received end in terminal state ${this.currentTask.state} — ignoring`,
@@ -322,8 +314,7 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
     }, 5_000);
   }
 
-  // ─── Cancel (RCS-initiated) ───────────────────────────────────────────────
-
+  // Cancel (RCS-initiated)
   async onTaskCancelled(taskCode: string): Promise<void> {
     if (!this.currentTask || this.currentTask.rcsTaskCode !== taskCode) {
       this.logger.warn(
@@ -338,8 +329,7 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`[taskCode=${taskCode}] Task cancelled and cleared`);
   }
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────
-
+  // Helpers
   getCurrentTaskState(): TaskState | null {
     return this.currentTask?.state ?? null;
   }
@@ -347,9 +337,9 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
   private async resetAllCoils(): Promise<void> {
     await Promise.all([
       this.tryWriteCoil(
-        COIL.DO_AGV_TASK_DISPATCHED,
+        COIL.DO_AGV_IS_READY_FOR_PICKUP,
         false,
-        'DO_AGV_TASK_DISPATCHED',
+        'DO_AGV_IS_READY_FOR_PICKUP',
       ),
       this.tryWriteCoil(
         COIL.DO_AGV_IN_SAFETY_ZONE,
@@ -371,8 +361,8 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('All DO coils reset to OFF');
   }
 
-  getCurrentTaskReqCode(): string | null {
-    return this.currentTask?.reqCode ?? null;
+  getCurrentTaskRcsTaskCode(): string | null {
+    return this.currentTask?.rcsTaskCode ?? null;
   }
 
   private transition(newState: TaskState, reason: string): void {
