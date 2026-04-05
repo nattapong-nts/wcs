@@ -98,6 +98,8 @@ export interface AgvStatusItem {
 
 export interface AgvStatusRequest {
   reqCode: string;
+  mapCode: string;
+  reqTime?: string;
 }
 
 export interface AgvStatusResponse {

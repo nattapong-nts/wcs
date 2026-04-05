@@ -21,6 +21,10 @@ const STATE_FILE = path.resolve(process.cwd(), 'task-state.json');
 @Injectable()
 export class TaskService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TaskService.name);
+  private agvStatusTimer: ReturnType<typeof setTimeout> | null = null;
+  private agvStatusPolling = false;
+
+  private lastAgvReadySignal: boolean | null = null;
 
   private currentTask: TaskContext | null = null;
 
@@ -35,10 +39,57 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit(): void {
     this.recoverPersistedTask();
+    this.startCheckingAgvStatus();
   }
 
   onModuleDestroy(): void {
-    this.persistTask();
+    this.agvStatusPolling = false;
+    if (this.agvStatusTimer) {
+      clearTimeout(this.agvStatusTimer);
+      this.agvStatusTimer = null;
+    }
+  }
+
+  // Interval check queryAgvStatus for ready to pickup
+  private startCheckingAgvStatus() {
+    const ms = this.agvCfg.checkAgvStatusIntervalMs;
+    this.logger.log(`Checking AGV status every ${ms}ms`);
+    this.agvStatusPolling = true;
+    this.scheduleAgvStatusPoll(ms);
+  }
+
+  private scheduleAgvStatusPoll(ms: number): void {
+    if (!this.agvStatusPolling) return;
+    this.agvStatusTimer = setTimeout(() => {
+      void this.pollAgvStatus(ms);
+    }, ms);
+  }
+
+  private async pollAgvStatus(ms: number): Promise<void> {
+    const reqCode = generateReqCode();
+    try {
+      const statusRes = await this.rcsService.queryAgvStatus(reqCode);
+      const availableAgv = statusRes.data.find(
+        (a) => a.status === '4' && a.online,
+      );
+      const currentPosition = `${availableAgv?.posX ?? ''}XY${availableAgv?.posY ?? ''}`;
+      const isReady =
+        !!availableAgv && currentPosition === this.agvCfg.standbyPosition;
+
+      if (isReady !== this.lastAgvReadySignal) {
+        this.lastAgvReadySignal = isReady;
+        await this.onAgvReadyForPickupChanged(isReady);
+        if (!isReady) {
+          this.logger.warn(
+            `No AGV at standby position ${this.agvCfg.standbyPosition} (found: ${availableAgv ? `${availableAgv.robotCode} at ${currentPosition}` : 'none'})`,
+          );
+        }
+      }
+    } catch (err) {
+      this.logger.error(`queryAgvStatus failed: ${(err as Error).message}`);
+    } finally {
+      this.scheduleAgvStatusPoll(ms);
+    }
   }
 
   // ─── Fix #7: Recover persisted task on startup ────────────────────────────
@@ -137,6 +188,19 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
       updatedAt: new Date(),
     };
     this.persistTask();
+  }
+
+  private async onAgvReadyForPickupChanged(isReady: boolean): Promise<void> {
+    await this.tryWriteCoil(
+      COIL.DO_AGV_IS_READY_FOR_PICKUP,
+      isReady,
+      'DO_AGV_IS_READY_FOR_PICKUP',
+    );
+    if (isReady) {
+      this.logger.log(
+        'AGV is at standby position and idle — DO_AGV_IS_READY_FOR_PICKUP → ON',
+      );
+    }
   }
 
   // ─── RCS "start" callback — AGV has begun moving ─────────────────────────

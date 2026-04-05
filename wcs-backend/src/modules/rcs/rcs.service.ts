@@ -134,8 +134,8 @@ export class RcsService {
 
     // return mockResponse;
 
-    const request: AgvStatusRequest = { reqCode };
-    const url = `${this.config.baseUrl}/rcms/services/rest/hikRpcService/queryAgvStatus`;
+    const request: AgvStatusRequest = { reqCode, mapCode: 'XY' };
+    const url = `${this.config.baseUrl}/rcms-dps/rest/queryAgvStatus`;
     const response = await this.executeWithRetry<AgvStatusResponse>(() =>
       firstValueFrom(
         this.httpService.post<AgvStatusResponse>(url, request, {
