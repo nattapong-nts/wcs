@@ -163,6 +163,11 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
           'DO_AGV_TASK_COMPLETE',
         );
         break;
+      case TaskState.COMPLETED:
+        this.logger.warn('[RECOVERY] Recovered COMPLETED task — clearing');
+        this.currentTask = null;
+        this.persistTask();
+        return;
       default:
         break;
     }
@@ -308,26 +313,6 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    // const availableAgv = statusRes.data.find(
-    //   (a) => a.status === '4' && a.online,
-    // );
-    // const isReady =
-    //   !!availableAgv &&
-    //   isAtPosition(
-    //     availableAgv.posX,
-    //     availableAgv.posY,
-    //     this.agvCfg.standbyPosition,
-    //     this.agvCfg.positionTolerance,
-    //   );
-
-    // if (!isReady) {
-    //   this.logger.warn(
-    //     `PLC request pickup but no idle online AGV found (statuses: ${statusRes.data.map((a) => `${a.robotCode}:${a.status}:online=${String(a.online)}`).join(', ')}) — aborting dispatch`,
-    //   );
-    //   return;
-    // }
-
-    // Find all idle AGVs at the standby zone
     const candidates = statusRes.data.filter(
       (a) =>
         a.status === '4' &&
@@ -339,7 +324,6 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
           this.agvCfg.positionTolerance,
         ),
     );
-    // .sort((a, b) => parseInt(b.battery) - parseInt(a.battery)); // highest battery first
     const selectedAgv = candidates[0];
 
     if (!selectedAgv) {
@@ -526,26 +510,17 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
 
   // ─── Step 3: AGV request to enter (begin leg 1) ───────────────────────────
 
-  async onAgvRequestToEnter(taskCode: string): Promise<void> {
-    if (!this.currentTask || this.currentTask.rcsTaskCode !== taskCode) {
-      this.logger.warn(
-        `[taskCode=${taskCode}] onAgvRequestToEnter: no matching active task — ignoring`,
-      );
-      return;
-    }
-    this.transition(
-      TaskState.AGV_ENTERING,
-      'RCS begin — AGV moving toward dock',
-    );
-    this.persistTask();
+  private async onAgvRequestToEnter(taskCode: string): Promise<void> {
     await this.tryWriteCoil(
       COIL.DO_REQUEST_TO_ENTER,
       true,
       'DO_REQUEST_TO_ENTER',
     );
-    this.logger.log(`[taskCode=${taskCode}] DO_REQUEST_TO_ENTER → ON`);
+    this.logger.log(
+      `[taskCode=${taskCode}] DO_REQUEST_TO_ENTER → ON (AGV begin moving toward dock)`,
+    );
     this.audit.log('agv_request_to_enter', {
-      reqCode: this.currentTask.reqCode,
+      reqCode: this.currentTask!.reqCode,
       taskCode,
     });
   }
@@ -785,10 +760,11 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
         taskCode,
       });
 
-      const reqCode = this.currentTask.reqCode;
+      const { reqCode, rcsTaskCode: completedTaskCode } = this.currentTask;
       setTimeout(() => {
+        if (this.currentTask?.rcsTaskCode !== completedTaskCode) return;
         void this.resetAllCoils().then(() => {
-          if (this.currentTask?.state === TaskState.COMPLETED) {
+          if (this.currentTask?.rcsTaskCode === completedTaskCode) {
             this.currentTask = null;
             this.persistTask();
             this.logger.log(
@@ -811,18 +787,21 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
       );
       return;
     }
-    // Multi-AGV safety: reject callbacks from AGVs not assigned to this task
     if (this.currentTask.robotCode !== robotCode) {
       this.logger.warn(
         `[taskCode=${taskCode}] onTaskCancelled: robotCode mismatch (expected ${this.currentTask.robotCode}, got ${robotCode}) — ignoring`,
       );
       return;
     }
-
-    this.transition(TaskState.IDLE, 'Task cancelled by RCS');
-    await this.resetAllCoils();
-    this.currentTask = null;
-    this.persistTask();
-    this.logger.log(`[taskCode=${taskCode}] Task cancelled and cleared`);
+    if (!this.acquireLock(`onTaskCancelled[${taskCode}]`)) return;
+    try {
+      this.transition(TaskState.IDLE, 'Task cancelled by RCS');
+      await this.resetAllCoils();
+      this.currentTask = null;
+      this.persistTask();
+      this.logger.log(`[taskCode=${taskCode}] Task cancelled and cleared`);
+    } finally {
+      this.releaseLock();
+    }
   }
 }

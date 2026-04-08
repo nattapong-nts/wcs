@@ -15,4 +15,12 @@ export class CallbackController {
   ): Promise<AgvCallbackResponse> {
     return await this.callbackService.handleRcsAgvCallback(body);
   }
+
+  // legacy endpoint for old callback
+  @Post('agv')
+  async handleAgvCallbackLegacy(
+    @Body() body: AgvCallbackPayload,
+  ): Promise<AgvCallbackResponse> {
+    return await this.callbackService.handleRcsAgvCallback(body);
+  }
 }
