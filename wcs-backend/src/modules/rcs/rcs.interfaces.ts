@@ -8,6 +8,8 @@ export interface AgvSchedulingTaskRequest {
   taskTyp: string;
   positionCodePath: AgvPositionCodePath[];
   priority: string;
+  podDir?: string;
+  agvCode?: string;
 }
 
 export interface AgvSchedulingTaskResponse {
@@ -21,7 +23,7 @@ export interface AgvSchedulingTaskResponse {
 export interface AgvContinueTaskRequest {
   reqCode: string;
   taskCode: string;
-  nextPositionCode: AgvPositionCodePath;
+  // nextPositionCode: AgvPositionCodePath;
 }
 
 export interface AgvContinueTaskResponse {
@@ -42,7 +44,7 @@ export interface AgvCancelTaskResponse {
   reqCode: string;
 }
 
-export type AgvCallbackMethod = 'start' | 'out' | 'complete' | 'cancel' | 'ctu';
+export type AgvCallbackMethod = 'begin' | 'out' | 'complete' | 'cancel';
 
 export interface AgvCallbackPayload {
   reqCode: string;

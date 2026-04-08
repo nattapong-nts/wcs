@@ -78,7 +78,7 @@ export class PlcPollerService implements OnModuleInit, OnModuleDestroy {
         this.lastItemsUnloadedSignal = itemsUnloaded;
         this.isFirstPollAfterConnect = false;
         this.logger.log(
-          `PLC edge-detection seeded after reconnect: DI100=${pickup} DI101=${goodsLoaded} DI102=${itemsUnloaded}`,
+          `PLC edge-detection seeded after reconnect: DI0=${pickup} DI1=${goodsLoaded} DI2=${itemsUnloaded}`,
         );
         return;
       }

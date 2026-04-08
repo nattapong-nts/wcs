@@ -31,16 +31,6 @@ export class RcsService {
       `Generating AGV scheduling task for request: ${JSON.stringify(request)}`,
     );
 
-    // const mockResponse: AgvSchedulingTaskResponse = {
-    //   code: '0',
-    //   data: '1234567890',
-    //   interrupt: false,
-    //   message: 'success',
-    //   reqCode: request.reqCode,
-    // };
-
-    // return mockResponse;
-
     const url = `${this.config.baseUrl}${this.config.genAgvSchedulingTaskApiPath}`;
     const response = await this.executeWithRetry<AgvSchedulingTaskResponse>(
       () =>
@@ -79,9 +69,6 @@ export class RcsService {
       `Continuing AGV task for request: ${JSON.stringify(request)}`,
     );
 
-    // // mock response
-    // return { code: '0', message: 'success', reqCode: request.reqCode };
-
     const url = `${this.config.baseUrl}${this.config.continueAgvTaskApiPath}`;
     const response = await this.executeWithRetry<AgvContinueTaskResponse>(() =>
       firstValueFrom(
@@ -113,28 +100,7 @@ export class RcsService {
   async queryAgvStatus(reqCode: string): Promise<AgvStatusResponse> {
     this.logger.log(`Querying AGV status: reqCode=${reqCode}`);
 
-    // const mockResponse: AgvStatusResponse = {
-    //   code: '0',
-    //   data: [
-    //     {
-    //       robotCode: 'SIM-001',
-    //       status: '4',
-    //       online: true,
-    //       battery: '100',
-    //       posX: '0',
-    //       posY: '0',
-    //       speed: '0',
-    //       mapCode: 'SIM',
-    //     },
-    //   ],
-    //   interrupt: false,
-    //   message: 'success',
-    //   reqCode,
-    // };
-
-    // return mockResponse;
-
-    const request: AgvStatusRequest = { reqCode, mapCode: 'XY' };
+    const request: AgvStatusRequest = { reqCode, mapCode: 'BB' };
     const url = `${this.config.baseUrl}/rcms-dps/rest/queryAgvStatus`;
     const response = await this.executeWithRetry<AgvStatusResponse>(() =>
       firstValueFrom(

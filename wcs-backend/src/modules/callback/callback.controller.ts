@@ -9,7 +9,7 @@ import type {
 export class CallbackController {
   constructor(private readonly callbackService: CallbackService) {}
 
-  @Post('agv')
+  @Post('wcs')
   async handleAgvCallback(
     @Body() body: AgvCallbackPayload,
   ): Promise<AgvCallbackResponse> {

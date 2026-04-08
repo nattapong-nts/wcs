@@ -20,35 +20,32 @@ export class CallbackService {
 
     try {
       switch (payload.method) {
-        case 'start':
-          await this.taskService.onAgvStarted(payload.taskCode);
-          break;
-
-        // case 'outbin': {
-        //   // Fix #4/#6: Use atomic onAgvArrivedAtDock which tolerates missed "start"
-        //   // callback and safely drives through multiple state transitions.
-        //   await this.taskService.onAgvArrivedAtDock(payload.reqCode);
-        //   break;
-        // }
-
-        case 'out':
-          // Do nothing
-          this.logger.log(
-            `[agvCallback] Out callback received for taskCode=${payload.taskCode}`,
+        case 'begin':
+          await this.taskService.onBeginCallback(
+            payload.taskCode,
+            payload.robotCode,
           );
           break;
 
         case 'complete':
-          // await this.taskService.onTaskComplete(payload.reqCode);
-          await this.taskService.onAgvArrivedAtDock(payload.taskCode);
+          await this.taskService.onCompleteCallback(
+            payload.taskCode,
+            payload.robotCode,
+          );
           break;
 
-        // case 'cancel':
-        //   this.logger.warn(
-        //     `[agvCallback] Task cancelled by RCS: reqCode=${payload.reqCode}`,
-        //   );
-        //   await this.taskService.onTaskCancelled(payload.reqCode);
-        //   break;
+        case 'out':
+          this.logger.log(
+            `[agvCallback] Out callback received for taskCode=${payload.taskCode} — no action`,
+          );
+          break;
+
+        case 'cancel':
+          await this.taskService.onTaskCancelled(
+            payload.taskCode,
+            payload.robotCode,
+          );
+          break;
 
         default:
           this.logger.warn(

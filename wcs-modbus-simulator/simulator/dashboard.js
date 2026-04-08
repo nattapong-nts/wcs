@@ -9,8 +9,10 @@ const MODBUS_PORT = 5020;
 // ─── State tracking ───────────────────────────────────────────────────────────
 // We mirror the coil/DI values here so the dashboard can display them
 const state = {
-  di: { 100: false, 101: false, 102: false }, // DI signals (PLC → backend)
+  di: { 0: false, 1: false, 2: false }, // DI signals (PLC → backend)
   do: { 0: false, 1: false, 2: false, 3: false, 4: false }, // DO coils (backend → PLC)
+  // DO[0]=AGV_IS_READY_FOR_PICKUP, DO[1]=REQUEST_TO_ENTER, DO[2]=AGV_AT_DOCK_WAITING
+  // DO[3]=REQUEST_TO_EXIT, DO[4]=AGV_TASK_COMPLETE
 };
 
 // ─── HTML Dashboard ───────────────────────────────────────────────────────────
@@ -21,9 +23,9 @@ function renderHtml() {
       : '<span style="color:#475569;font-size:1.4em">○</span>';
 
   const diRows = [
-    [100, "PLC Request Pickup", "plc-request-pickup"],
-    [101, "Goods Loaded", "goods-loaded"],
-    [102, "Items Unloaded", "items-unloaded"],
+    [0, "PLC Request Pickup", "plc-request-pickup"],
+    [1, "Goods Loaded", "goods-loaded"],
+    [2, "Items Unloaded", "items-unloaded"],
   ]
     .map(
       ([addr, label, step]) => `
@@ -41,9 +43,9 @@ function renderHtml() {
 
   const doLabels = {
     0: "DO_AGV_IS_READY_FOR_PICKUP",
-    1: "DO_AGV_IN_SAFETY_ZONE",
+    1: "DO_REQUEST_TO_ENTER",
     2: "DO_AGV_AT_DOCK_WAITING",
-    3: "DO_AGV_CONTINUING",
+    3: "DO_REQUEST_TO_EXIT",
     4: "DO_AGV_TASK_COMPLETE",
   };
 
@@ -143,9 +145,9 @@ function renderHtml() {
       const on = url.searchParams.get("on") !== "false";
 
       const stepMap = {
-        "plc-request-pickup": 100,
-        "goods-loaded": 101,
-        "items-unloaded": 102,
+        "plc-request-pickup": 0,
+        "goods-loaded": 1,
+        "items-unloaded": 2,
       };
 
       const addr = stepMap[step];

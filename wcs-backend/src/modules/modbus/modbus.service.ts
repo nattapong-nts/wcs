@@ -147,6 +147,19 @@ export class ModbusService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async readCoils(startAddress: number, count: number): Promise<boolean[]> {
+    this.ensureConnected();
+    try {
+      const response = await this.client.readCoils(startAddress, count);
+      return response.response.body.valuesAsArray.map((v) => !!v);
+    } catch (err) {
+      this.logger.error(
+        `Failed to read COILS at ${startAddress}+${count}: ${(err as Error).message}`,
+      );
+      throw err;
+    }
+  }
+
   get isConnected(): boolean {
     return this.connected;
   }
