@@ -7,14 +7,14 @@ import {
 } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import modbusConfig from 'src/config/modbus.config';
-import { COIL } from '../modbus/modbus.constants';
 import { ModbusService } from '../modbus/modbus.service';
 import { TaskService } from '../task/task.service';
 
 @Injectable()
 export class PlcPollerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PlcPollerService.name);
-  private intervalHandle: ReturnType<typeof setInterval> | null = null;
+  private pollTimer: ReturnType<typeof setTimeout> | null = null;
+  private isPolling = false;
 
   // Edge detection — only fire on OFF→ON transition, not while signal stays ON
   private lastPickupSignal = false;
@@ -39,21 +39,35 @@ export class PlcPollerService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleDestroy() {
-    if (this.intervalHandle) {
-      clearInterval(this.intervalHandle);
-      this.intervalHandle = null;
+    this.isPolling = false;
+    if (this.pollTimer) {
+      clearTimeout(this.pollTimer);
+      this.pollTimer = null;
     }
   }
 
   private startPolling() {
     const ms = this.config.pollIntervalMs;
     this.logger.log(`Starting PLC poll loop every ${ms}ms`);
+    this.isPolling = true;
+    this.schedulePoll(ms);
+  }
 
-    this.intervalHandle = setInterval(() => {
-      this.pollPlc().catch((error) => {
-        this.logger.error('Error in poll cycle', error);
-      });
+  private schedulePoll(ms: number): void {
+    if (!this.isPolling) return;
+    this.pollTimer = setTimeout(() => {
+      void this.pollAndReschedule(ms);
     }, ms);
+  }
+
+  private async pollAndReschedule(ms: number): Promise<void> {
+    try {
+      await this.pollPlc();
+    } catch (error) {
+      this.logger.error('Error in poll cycle', error);
+    } finally {
+      this.schedulePoll(ms);
+    }
   }
 
   private async pollPlc() {
@@ -63,10 +77,10 @@ export class PlcPollerService implements OnModuleInit, OnModuleDestroy {
       return;
     }
     try {
-      // Read all 3 DI signals in a single batch request (addresses 100–102)
+      // Read all 3 DI signals in a single batch request
       const [pickup, goodsLoaded, itemsUnloaded] =
         await this.modbusService.readDiscreteInputs(
-          COIL.DI_PLC_REQUEST_PICKUP,
+          this.modbusService.coil.DI_PLC_REQUEST_PICKUP,
           3,
         );
 

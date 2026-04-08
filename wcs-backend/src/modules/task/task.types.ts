@@ -21,4 +21,8 @@ export interface TaskContext {
   destinationPosition: string; // where goods are unloaded (D)
   startedAt: Date;
   updatedAt: Date;
+  // Dedup flags — RCS retries the same callback several times before receiving
+  // an ACK; these prevent writing duplicate audit entries for the same event.
+  enterLogged?: boolean;
+  exitLogged?: boolean;
 }

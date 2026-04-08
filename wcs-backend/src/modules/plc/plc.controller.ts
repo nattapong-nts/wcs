@@ -13,8 +13,8 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #0f1117;
-      color: #e2e8f0;
+      background: #f0f4f8;
+      color: #1a202c;
       min-height: 100vh;
       padding: 28px 32px;
     }
@@ -23,58 +23,60 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       align-items: baseline;
       justify-content: space-between;
       margin-bottom: 28px;
-      border-bottom: 1px solid #2d3748;
+      border-bottom: 1px solid #cbd5e0;
       padding-bottom: 16px;
     }
-    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: .04em; color: #63b3ed; }
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: .04em; color: #2b6cb0; }
     #ts { font-size: .8rem; color: #718096; font-variant-numeric: tabular-nums; }
 
     .status-bar {
       display: flex;
       gap: 24px;
       align-items: center;
-      background: #1a202c;
-      border: 1px solid #2d3748;
+      background: #ffffff;
+      border: 1px solid #cbd5e0;
       border-radius: 10px;
       padding: 14px 20px;
       margin-bottom: 28px;
       flex-wrap: wrap;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
     }
     .status-item { display: flex; flex-direction: column; gap: 2px; }
     .status-item .label { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: #718096; }
     .status-item .value { font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-    .conn-ok  { color: #68d391; }
-    .conn-err { color: #fc8181; }
-    .task-state { color: #f6ad55; font-size: 1.05rem; }
+    .conn-ok  { color: #276749; }
+    .conn-err { color: #c53030; }
+    .task-state { color: #c05621; font-size: 1.05rem; }
 
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } }
 
     .card {
-      background: #1a202c;
-      border: 1px solid #2d3748;
+      background: #ffffff;
+      border: 1px solid #cbd5e0;
       border-radius: 10px;
       overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
     }
     .card-header {
       padding: 12px 18px;
-      background: #2d3748;
+      background: #edf2f7;
       font-size: .75rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .1em;
-      color: #a0aec0;
+      color: #4a5568;
     }
     .signal-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 11px 18px;
-      border-bottom: 1px solid #2d3748;
+      border-bottom: 1px solid #e2e8f0;
       gap: 12px;
     }
     .signal-row:last-child { border-bottom: none; }
-    .signal-label { font-size: .85rem; color: #cbd5e0; }
+    .signal-label { font-size: .85rem; color: #2d3748; }
     .signal-addr  { font-size: .72rem; color: #718096; font-variant-numeric: tabular-nums; }
     .led-wrap { display: flex; align-items: center; gap: 8px; }
     .led {
@@ -83,27 +85,28 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       flex-shrink: 0;
       transition: background .15s, box-shadow .15s;
     }
-    .led.on  { background: #48bb78; box-shadow: 0 0 8px 2px #48bb7888; }
-    .led.off { background: #2d3748; box-shadow: none; }
+    .led.on  { background: #38a169; box-shadow: 0 0 8px 2px #38a16966; }
+    .led.off { background: #cbd5e0; box-shadow: none; }
     .led-text { font-size: .75rem; font-variant-numeric: tabular-nums; min-width: 24px; text-align: right; }
-    .led-text.on  { color: #68d391; }
-    .led-text.off { color: #4a5568; }
+    .led-text.on  { color: #276749; }
+    .led-text.off { color: #a0aec0; }
 
     .flow-section {
       margin-top: 28px;
-      background: #1a202c;
-      border: 1px solid #2d3748;
+      background: #ffffff;
+      border: 1px solid #cbd5e0;
       border-radius: 10px;
       overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
     }
     .flow-header {
       padding: 12px 18px;
-      background: #2d3748;
+      background: #edf2f7;
       font-size: .75rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .1em;
-      color: #a0aec0;
+      color: #4a5568;
     }
     .flow-steps {
       display: flex;
@@ -122,37 +125,37 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     .step-dot {
       width: 36px; height: 36px;
       border-radius: 50%;
-      border: 2px solid #4a5568;
+      border: 2px solid #cbd5e0;
       display: flex; align-items: center; justify-content: center;
       font-size: .8rem;
       font-weight: 700;
-      color: #718096;
-      background: #0f1117;
+      color: #a0aec0;
+      background: #f7fafc;
       transition: all .2s;
       flex-shrink: 0;
     }
     .step-dot.active {
-      border-color: #f6ad55;
-      color: #f6ad55;
-      background: #2d3748;
-      box-shadow: 0 0 12px 2px #f6ad5544;
+      border-color: #dd6b20;
+      color: #c05621;
+      background: #fffaf0;
+      box-shadow: 0 0 12px 2px #dd6b2033;
     }
     .step-dot.done {
-      border-color: #48bb78;
-      color: #48bb78;
-      background: #1a202c;
+      border-color: #38a169;
+      color: #276749;
+      background: #f0fff4;
     }
     .step-name { font-size: .65rem; text-align: center; color: #718096; max-width: 90px; line-height: 1.3; }
-    .step-name.active { color: #f6ad55; }
-    .step-name.done   { color: #68d391; }
-    .step-arrow { color: #4a5568; font-size: 1.1rem; padding: 0 4px; flex-shrink: 0; }
+    .step-name.active { color: #c05621; }
+    .step-name.done   { color: #276749; }
+    .step-arrow { color: #cbd5e0; font-size: 1.1rem; padding: 0 4px; flex-shrink: 0; }
 
-    footer { margin-top: 28px; font-size: .72rem; color: #4a5568; text-align: center; }
+    footer { margin-top: 28px; font-size: .72rem; color: #a0aec0; text-align: center; }
 
     .btn-reset {
-      background: #742a2a;
-      color: #fed7d7;
-      border: 1px solid #9b2c2c;
+      background: #fff5f5;
+      color: #c53030;
+      border: 1px solid #feb2b2;
       border-radius: 6px;
       padding: 8px 16px;
       font-size: .82rem;
@@ -161,7 +164,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       transition: background .15s, transform .1s;
       white-space: nowrap;
     }
-    .btn-reset:hover  { background: #9b2c2c; }
+    .btn-reset:hover  { background: #fed7d7; }
     .btn-reset:active { transform: scale(.97); }
     .btn-reset:disabled { opacity: .45; cursor: not-allowed; }
     #resetMsg {
@@ -170,14 +173,14 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       min-height: 16px;
       text-align: right;
     }
-    #resetMsg.ok  { color: #68d391; }
-    #resetMsg.err { color: #fc8181; }
+    #resetMsg.ok  { color: #276749; }
+    #resetMsg.err { color: #c53030; }
 
     #modal-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.65);
+      background: rgba(0,0,0,.35);
       backdrop-filter: blur(3px);
       z-index: 100;
       align-items: center;
@@ -185,37 +188,37 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     }
     #modal-overlay.open { display: flex; }
     #modal {
-      background: #1a202c;
-      border: 1px solid #742a2a;
+      background: #ffffff;
+      border: 1px solid #feb2b2;
       border-radius: 12px;
       padding: 28px 28px 22px;
       max-width: 420px;
       width: 90%;
-      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+      box-shadow: 0 20px 60px rgba(0,0,0,.15);
     }
     #modal-title {
       font-size: 1rem;
       font-weight: 700;
-      color: #fc8181;
+      color: #c53030;
       margin-bottom: 14px;
       letter-spacing: .02em;
     }
     #modal-body {
       font-size: .85rem;
-      color: #a0aec0;
+      color: #4a5568;
       line-height: 1.6;
       margin-bottom: 22px;
     }
-    #modal-body strong { color: #f6ad55; }
+    #modal-body strong { color: #c05621; }
     #modal-actions {
       display: flex;
       justify-content: flex-end;
       gap: 10px;
     }
     #modal-cancel {
-      background: #2d3748;
-      color: #e2e8f0;
-      border: 1px solid #4a5568;
+      background: #edf2f7;
+      color: #2d3748;
+      border: 1px solid #cbd5e0;
       border-radius: 6px;
       padding: 9px 20px;
       font-size: .85rem;
@@ -223,11 +226,11 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       cursor: pointer;
       transition: background .15s;
     }
-    #modal-cancel:hover { background: #4a5568; }
+    #modal-cancel:hover { background: #e2e8f0; }
     #modal-confirm {
-      background: #742a2a;
-      color: #fed7d7;
-      border: 1px solid #9b2c2c;
+      background: #fff5f5;
+      color: #c53030;
+      border: 1px solid #feb2b2;
       border-radius: 6px;
       padding: 9px 20px;
       font-size: .85rem;
@@ -235,7 +238,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       cursor: pointer;
       transition: background .15s;
     }
-    #modal-confirm:hover { background: #9b2c2c; }
+    #modal-confirm:hover { background: #fed7d7; }
     #modal-cancel:disabled, #modal-confirm:disabled { opacity: .45; cursor: not-allowed; }
   </style>
 </head>
@@ -270,7 +273,6 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       <div class="signal-row">
         <div>
           <div class="signal-label">Request Pickup</div>
-          <div class="signal-addr">DI 0 · DI_PLC_REQUEST_PICKUP</div>
         </div>
         <div class="led-wrap">
           <div class="led off" id="di0"></div>
@@ -280,7 +282,6 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       <div class="signal-row">
         <div>
           <div class="signal-label">Goods Loaded</div>
-          <div class="signal-addr">DI 1 · DI_JOB_SETUP_COMPLETE</div>
         </div>
         <div class="led-wrap">
           <div class="led off" id="di1"></div>
@@ -289,8 +290,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       </div>
       <div class="signal-row">
         <div>
-          <div class="signal-label">Items Unloaded</div>
-          <div class="signal-addr">DI 2 · DI_ITEMS_UNLOADED</div>
+          <div class="signal-label">Goods Unloaded</div>
         </div>
         <div class="led-wrap">
           <div class="led off" id="di2"></div>
@@ -304,7 +304,6 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       <div class="signal-row">
         <div>
           <div class="signal-label">AGV Ready for Pickup</div>
-          <div class="signal-addr">DO 0 · DO_AGV_IS_READY_FOR_PICKUP</div>
         </div>
         <div class="led-wrap">
           <div class="led off" id="do0"></div>
@@ -314,7 +313,6 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       <div class="signal-row">
         <div>
           <div class="signal-label">Request to Enter</div>
-          <div class="signal-addr">DO 1 · DO_REQUEST_TO_ENTER</div>
         </div>
         <div class="led-wrap">
           <div class="led off" id="do1"></div>
@@ -324,7 +322,6 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       <div class="signal-row">
         <div>
           <div class="signal-label">AGV at Dock Waiting</div>
-          <div class="signal-addr">DO 2 · DO_AGV_AT_DOCK_WAITING</div>
         </div>
         <div class="led-wrap">
           <div class="led off" id="do2"></div>
@@ -334,7 +331,6 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       <div class="signal-row">
         <div>
           <div class="signal-label">Request to Exit</div>
-          <div class="signal-addr">DO 3 · DO_REQUEST_TO_EXIT</div>
         </div>
         <div class="led-wrap">
           <div class="led off" id="do3"></div>
@@ -344,7 +340,6 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       <div class="signal-row">
         <div>
           <div class="signal-label">Task Complete</div>
-          <div class="signal-addr">DO 4 · DO_AGV_TASK_COMPLETE</div>
         </div>
         <div class="led-wrap">
           <div class="led off" id="do4"></div>

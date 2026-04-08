@@ -1,0 +1,19 @@
+services:
+  wcs-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wcs-backend
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    env_file:
+      - .env # edit config in .env on server
+    volumes:
+      - ./logs:/app/logs # logs persist on host machine
+    networks:
+      - wcs-net
+
+networks:
+  wcs-net:
+    driver: bridge

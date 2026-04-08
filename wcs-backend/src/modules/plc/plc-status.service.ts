@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import modbusConfig from 'src/config/modbus.config';
-import { COIL } from '../modbus/modbus.constants';
 import { ModbusService } from '../modbus/modbus.service';
 import { TaskService } from '../task/task.service';
 
@@ -18,9 +17,16 @@ export interface PlcStatus {
 const EMPTY_DI = { 0: false, 1: false, 2: false };
 const EMPTY_DO = { 0: false, 1: false, 2: false, 3: false, 4: false };
 
+// How long (ms) a cached status read is considered fresh.
+// Prevents redundant Modbus reads when multiple dashboard tabs poll simultaneously.
+const STATUS_CACHE_TTL_MS = 400;
+
 @Injectable()
 export class PlcStatusService {
   private readonly logger = new Logger(PlcStatusService.name);
+
+  private cachedStatus: PlcStatus | null = null;
+  private cacheExpiresAt = 0;
 
   constructor(
     @Inject(modbusConfig.KEY)
@@ -30,6 +36,18 @@ export class PlcStatusService {
   ) {}
 
   async readAll(): Promise<PlcStatus> {
+    const now = Date.now();
+    if (this.cachedStatus && now < this.cacheExpiresAt) {
+      return this.cachedStatus;
+    }
+
+    const status = await this.fetchFromDevice();
+    this.cachedStatus = status;
+    this.cacheExpiresAt = now + STATUS_CACHE_TTL_MS;
+    return status;
+  }
+
+  private async fetchFromDevice(): Promise<PlcStatus> {
     const base = {
       connected: this.modbusService.isConnected,
       host: this.config.host,
@@ -43,9 +61,10 @@ export class PlcStatusService {
     }
 
     try {
+      const coil = this.modbusService.coil;
       const [diValues, doValues] = await Promise.all([
-        this.modbusService.readDiscreteInputs(COIL.DI_PLC_REQUEST_PICKUP, 3),
-        this.modbusService.readCoils(0, 5),
+        this.modbusService.readDiscreteInputs(coil.DI_PLC_REQUEST_PICKUP, 3),
+        this.modbusService.readCoils(coil.DO_AGV_IS_READY_FOR_PICKUP, 5),
       ]);
 
       return {

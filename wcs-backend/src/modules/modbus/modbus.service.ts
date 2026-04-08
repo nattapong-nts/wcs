@@ -164,6 +164,20 @@ export class ModbusService implements OnModuleInit, OnModuleDestroy {
     return this.connected;
   }
 
+  /** Live coil addresses resolved from config / environment variables. */
+  get coil() {
+    return {
+      DI_PLC_REQUEST_PICKUP: this.config.diPickup,
+      DI_JOB_SETUP_COMPLETE: this.config.diGoodsLoaded,
+      DI_ITEMS_UNLOADED: this.config.diItemsUnloaded,
+      DO_AGV_IS_READY_FOR_PICKUP: this.config.doAgvReady,
+      DO_REQUEST_TO_ENTER: this.config.doRequestEnter,
+      DO_AGV_AT_DOCK_WAITING: this.config.doAtDock,
+      DO_REQUEST_TO_EXIT: this.config.doRequestExit,
+      DO_AGV_TASK_COMPLETE: this.config.doTaskComplete,
+    } as const;
+  }
+
   // Helper
   private ensureConnected() {
     if (!this.connected) {

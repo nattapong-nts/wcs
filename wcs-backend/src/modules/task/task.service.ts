@@ -10,7 +10,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import agvConfig from 'src/config/agv.config';
 import { generateReqCode, isAtPosition } from 'src/utils';
-import { COIL } from '../modbus/modbus.constants';
 import { ModbusService } from '../modbus/modbus.service';
 import { type AgvStatusResponse } from '../rcs/rcs.interfaces';
 import { RcsService } from '../rcs/rcs.service';
@@ -137,28 +136,28 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
     switch (state) {
       case TaskState.AGV_ENTERING:
         await this.tryWriteCoil(
-          COIL.DO_REQUEST_TO_ENTER,
+          this.modbusService.coil.DO_REQUEST_TO_ENTER,
           true,
           'DO_REQUEST_TO_ENTER',
         );
         break;
       case TaskState.WAITING_FOR_PLC:
         await this.tryWriteCoil(
-          COIL.DO_AGV_AT_DOCK_WAITING,
+          this.modbusService.coil.DO_AGV_AT_DOCK_WAITING,
           true,
           'DO_AGV_AT_DOCK_WAITING',
         );
         break;
       case TaskState.AGV_EXITING:
         await this.tryWriteCoil(
-          COIL.DO_REQUEST_TO_EXIT,
+          this.modbusService.coil.DO_REQUEST_TO_EXIT,
           true,
           'DO_REQUEST_TO_EXIT',
         );
         break;
       case TaskState.AGV_AT_DESTINATION:
         await this.tryWriteCoil(
-          COIL.DO_AGV_TASK_COMPLETE,
+          this.modbusService.coil.DO_AGV_TASK_COMPLETE,
           true,
           'DO_AGV_TASK_COMPLETE',
         );
@@ -211,21 +210,30 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
   // value on its next tick without any race.
   private async resetAllCoils(): Promise<void> {
     await Promise.all([
-      this.tryWriteCoil(COIL.DO_REQUEST_TO_ENTER, false, 'DO_REQUEST_TO_ENTER'),
       this.tryWriteCoil(
-        COIL.DO_AGV_AT_DOCK_WAITING,
+        this.modbusService.coil.DO_REQUEST_TO_ENTER,
+        false,
+        'DO_REQUEST_TO_ENTER',
+      ),
+      this.tryWriteCoil(
+        this.modbusService.coil.DO_AGV_AT_DOCK_WAITING,
         false,
         'DO_AGV_AT_DOCK_WAITING',
       ),
-      this.tryWriteCoil(COIL.DO_REQUEST_TO_EXIT, false, 'DO_REQUEST_TO_EXIT'),
       this.tryWriteCoil(
-        COIL.DO_AGV_TASK_COMPLETE,
+        this.modbusService.coil.DO_REQUEST_TO_EXIT,
+        false,
+        'DO_REQUEST_TO_EXIT',
+      ),
+      this.tryWriteCoil(
+        this.modbusService.coil.DO_AGV_TASK_COMPLETE,
         false,
         'DO_AGV_TASK_COMPLETE',
       ),
     ]);
-    // Force the poller to re-check and re-write DO0 on the next cycle.
-    this.lastAgvReadySignal = null;
+    // Signal that the AGV is no longer confirmed ready so the poller fires
+    // agv_ready_at_standby exactly once when it returns — not on every cycle.
+    this.lastAgvReadySignal = false;
     this.logger.log('All DO coils reset to OFF');
   }
 
@@ -276,7 +284,7 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
 
   private async onAgvReadyForPickupChanged(isReady: boolean): Promise<void> {
     await this.tryWriteCoil(
-      COIL.DO_AGV_IS_READY_FOR_PICKUP,
+      this.modbusService.coil.DO_AGV_IS_READY_FOR_PICKUP,
       isReady,
       'DO_AGV_IS_READY_FOR_PICKUP',
     );
@@ -512,17 +520,20 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
 
   private async onAgvRequestToEnter(taskCode: string): Promise<void> {
     await this.tryWriteCoil(
-      COIL.DO_REQUEST_TO_ENTER,
+      this.modbusService.coil.DO_REQUEST_TO_ENTER,
       true,
       'DO_REQUEST_TO_ENTER',
     );
     this.logger.log(
       `[taskCode=${taskCode}] DO_REQUEST_TO_ENTER → ON (AGV begin moving toward dock)`,
     );
-    this.audit.log('agv_request_to_enter', {
-      reqCode: this.currentTask!.reqCode,
-      taskCode,
-    });
+    if (!this.currentTask!.enterLogged) {
+      this.audit.log('agv_request_to_enter', {
+        reqCode: this.currentTask!.reqCode,
+        taskCode,
+      });
+      this.currentTask!.enterLogged = true;
+    }
   }
 
   // ─── Step 4: AGV arrived at dock (complete leg 1) ─────────────────────────
@@ -536,12 +547,12 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
     }
     this.transition(TaskState.WAITING_FOR_PLC, 'AGV arrived at dock');
     await this.tryWriteCoil(
-      COIL.DO_REQUEST_TO_ENTER,
+      this.modbusService.coil.DO_REQUEST_TO_ENTER,
       false,
       'DO_REQUEST_TO_ENTER',
     );
     await this.tryWriteCoil(
-      COIL.DO_AGV_AT_DOCK_WAITING,
+      this.modbusService.coil.DO_AGV_AT_DOCK_WAITING,
       true,
       'DO_AGV_AT_DOCK_WAITING',
     );
@@ -569,7 +580,7 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
       // Bug #2: Turn DO_AGV_AT_DOCK_WAITING OFF before releasing the AGV so the
       // PLC knows the dock is clear the moment goods are confirmed loaded.
       await this.tryWriteCoil(
-        COIL.DO_AGV_AT_DOCK_WAITING,
+        this.modbusService.coil.DO_AGV_AT_DOCK_WAITING,
         false,
         'DO_AGV_AT_DOCK_WAITING',
       );
@@ -586,7 +597,7 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
       } catch (err) {
         // Roll back DO2 — continueTask failed so the AGV is still at the dock.
         await this.tryWriteCoil(
-          COIL.DO_AGV_AT_DOCK_WAITING,
+          this.modbusService.coil.DO_AGV_AT_DOCK_WAITING,
           true,
           'DO_AGV_AT_DOCK_WAITING',
         );
@@ -628,15 +639,18 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
     );
     this.persistTask();
     await this.tryWriteCoil(
-      COIL.DO_REQUEST_TO_EXIT,
+      this.modbusService.coil.DO_REQUEST_TO_EXIT,
       true,
       'DO_REQUEST_TO_EXIT',
     );
     this.logger.log(`[taskCode=${taskCode}] DO_REQUEST_TO_EXIT → ON`);
-    this.audit.log('agv_request_to_exit', {
-      reqCode: this.currentTask.reqCode,
-      taskCode,
-    });
+    if (!this.currentTask.exitLogged) {
+      this.audit.log('agv_request_to_exit', {
+        reqCode: this.currentTask.reqCode,
+        taskCode,
+      });
+      this.currentTask.exitLogged = true;
+    }
   }
 
   // ─── Step 7: AGV at notification point (complete leg 2) ───────────────────
@@ -654,7 +668,7 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
       'AGV arrived at notification point',
     );
     await this.tryWriteCoil(
-      COIL.DO_REQUEST_TO_EXIT,
+      this.modbusService.coil.DO_REQUEST_TO_EXIT,
       false,
       'DO_REQUEST_TO_EXIT',
     );
@@ -698,7 +712,7 @@ export class TaskService implements OnModuleInit, OnModuleDestroy {
     this.transition(TaskState.AGV_AT_DESTINATION, 'AGV arrived at destination');
     this.persistTask();
     await this.tryWriteCoil(
-      COIL.DO_AGV_TASK_COMPLETE,
+      this.modbusService.coil.DO_AGV_TASK_COMPLETE,
       true,
       'DO_AGV_TASK_COMPLETE',
     );
